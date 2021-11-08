@@ -1,10 +1,10 @@
 compiler = gcc
 
-GetMessage_test: GetMessage_test.c GetMessage.o
+Message_test: Message_test.c Message.o
 	$(compiler) $^ -o $@
 
-GetMessage.o: GetMessage.c GetMessage.h
-	$(compiler) -c GetMessage.c -o $@
+Message.o: Message.c Message.h
+	$(compiler) -c Message.c -o $@
 
 clean: *.o
 	rm $^
