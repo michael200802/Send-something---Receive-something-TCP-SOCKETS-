@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 
 struct Message
@@ -10,7 +9,7 @@ struct Message
     char * buffer;
 };
 
-#define clear_Message(Message)\
+#define ClearMessage(Message)\
     free(Message.buffer);
 
 #define ShowMessageContent(Message)\
@@ -18,4 +17,4 @@ struct Message
 
 #define MAX_BUFFER_SIZE_FOR_INPUT 3
 
-struct Message GetMessageFromUser();
+struct Message GetMessage(int fd);

@@ -1,16 +1,22 @@
-#include "GetMessageFromUser.h"
+#include "GetMessage.h"
 
-struct Message GetMessageFromUser()
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#include <string.h>
+
+struct Message GetMessage(int fd)
 {
-    printf("Message: ");
 
-    char buffer[MAX_BUFFER_SIZE_FOR_INPUT];
+    char buffer[MAX_BUFFER_SIZE_FOR_INPUT+1];
+    buffer[MAX_BUFFER_SIZE_FOR_INPUT] = '\0';
     size_t buffer_size;
     
     struct Message Message = {0,0};
 
-    fgets(buffer,MAX_BUFFER_SIZE_FOR_INPUT,stdin);
-    buffer_size = strlen(buffer);
+    buffer_size = read(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT);
 
     if(buffer[buffer_size-1] == '\n')
     {
@@ -22,10 +28,10 @@ struct Message GetMessageFromUser()
     Message.buffer = (char*)calloc(Message.size,sizeof(char));
     memcpy(Message.buffer,buffer,Message.size);
 
-    while(buffer[buffer_size-1] != '\n' && buffer_size == MAX_BUFFER_SIZE_FOR_INPUT-1)
+    while(buffer[buffer_size-1] != '\n' && buffer_size == MAX_BUFFER_SIZE_FOR_INPUT)
     {
-        fgets(buffer,MAX_BUFFER_SIZE_FOR_INPUT,stdin);
-        buffer_size = strlen(buffer);
+        buffer_size = read(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT);
+
         if(buffer[buffer_size-1] == '\n')
         {
             buffer_size--;
@@ -41,10 +47,7 @@ struct Message GetMessageFromUser()
         memcpy(Message.buffer + Message.size -1, buffer, buffer_size+1);
 
         Message.size += buffer_size;
-
-        //ShowMessageContent(Message);
     }
 
     return Message;
-
 } 
