@@ -9,8 +9,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <stdbool.h>
-
 void ClearMessage(struct Message Message)
 {
     Message.size = 0;
@@ -104,3 +102,69 @@ struct Message GetMessage(int fd)
     return Message;
 }
 
+struct Message StrToMessage(const char * restrict str)
+{
+    size_t length = 0;
+    while(str[length++] != '\0');
+    struct Message Message = {length,(char*)calloc(length,sizeof(char))};
+    Mymemcpy(Message.buffer,str,length);
+    return Message;
+}
+
+void InitMessageQueue(struct MessageQueue * Message)
+{
+    Message->MessageQueueFirstMessage = NULL;
+    Message->MessageQueueLastMessage = NULL;
+}
+
+bool AddToMessageQueue(struct Message Message, struct MessageQueue * MessageQueue)
+{
+    //Create and fill
+    struct MessageQueueNode *PtrToNewNode = (struct MessageQueueNode*)calloc(1,sizeof(struct MessageQueueNode)); 
+    if(PtrToNewNode == NULL)
+    {
+        return false;
+    }
+    time_t timer = time(NULL);
+    PtrToNewNode->date = *localtime(&timer);
+    PtrToNewNode->Message = Message;
+
+    //Put it in
+    if(MessageQueue->MessageQueueLastMessage == NULL && MessageQueue->MessageQueueFirstMessage == NULL)
+    {
+        MessageQueue->MessageQueueFirstMessage = PtrToNewNode;
+        MessageQueue->MessageQueueLastMessage = PtrToNewNode;
+    }
+    else
+    {
+        MessageQueue->MessageQueueLastMessage->next = PtrToNewNode;
+        MessageQueue->MessageQueueLastMessage = PtrToNewNode;
+    }
+
+    //Sucessful
+    return true;
+}
+
+void ClearMessageQueue(struct MessageQueue * MessageQueue)
+{
+    struct MessageQueueNode *PrevNode = MessageQueue->MessageQueueFirstMessage, *NextNode = PrevNode;
+    while(NextNode)
+    {
+        NextNode = PrevNode->next;
+        free(PrevNode->Message.buffer);
+        free(PrevNode);
+        PrevNode = NextNode;
+    }
+}
+
+void ShowMessageQueue(struct MessageQueue * MessageQueue)
+{
+    struct MessageQueueNode * PtrToNode = MessageQueue->MessageQueueFirstMessage;
+    while(PtrToNode)
+    {
+        printf("\nDate: %s",asctime(&PtrToNode->date));
+        ShowMessageContent(&PtrToNode->Message);
+        PtrToNode = PtrToNode->next;
+    }
+    putchar(10);
+}

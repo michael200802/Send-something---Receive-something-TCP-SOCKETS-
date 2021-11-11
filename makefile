@@ -1,5 +1,11 @@
 compiler = gcc
 
+SendSomething: SendSomething.c Message.o Mystring.o
+	$(compiler) $? -o $@
+
+Mystring.o: Mystring.h Mystring.c
+	$(compiler) -c Mystring.c -o $@ 
+
 Message_test: Message_test.c Message.o
 	$(compiler) $^ -o $@
 

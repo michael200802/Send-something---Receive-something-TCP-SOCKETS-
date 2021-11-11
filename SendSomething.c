@@ -7,120 +7,58 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-typedef char BOOL;
-enum BOOL_VALUE {FALSE,TRUE};
+#include <time.h>
 
-BOOL equalstr(const char * str1, const char * str2)
-{
-    while (*str1 && *str2)
-    {
-        if(*str1++ != *str2++)
-        {
-            return FALSE;
-        }
-    }
-    return TRUE;
-}
+#include <stdlib.h>
 
-size_t strlength(const char * restrict str)
-{
-    size_t i = 0;
-    while (*str)
-    {
-        i++;
-        str++;
-    }
-    return i;
-}
-
-char * findstr(char * str, const char * substr)
-{
-    size_t i;
-    while (*str)
-    {
-        for (i = 0; substr[i] != '\0' && str[i] == substr[i]; i++);
-        if(substr[i] == '\0')
-        {
-            return str;
-        }
-        str++;
-    }
-    return NULL;
-}
-
-char * splitstr(char * str, const char * delim)
-{
-    static char * internal_str;
-    static BOOL first_use = TRUE;
-
-    if(first_use)
-    {
-        if(str == NULL)
-        {
-            return NULL;
-        }
-        internal_str = str;
-        first_use = FALSE;
-    }
-
-    char * substr;
-
-    substr = findstr(internal_str,delim);
-    if(NULL == substr)
-    {
-        first_use = TRUE;
-        if(*internal_str)
-        {
-            return internal_str;
-        }
-        return NULL;
-    }
-    *substr = '\0';
-
-    char * returned_str = internal_str;
-
-    do
-    {
-        internal_str = substr+strlength(delim);
-        substr = findstr(internal_str,delim);
-    } while (substr == internal_str);
-    
-    return returned_str;
-}
+#include "Mystring.h"
 
 int main()
-{ 
-    struct Message input, file;
+{
+    struct MessageQueue MessageQueue;
+    InitMessageQueue(&MessageQueue);
+    struct Message input = {0,0}, file;
     char * mode_arg, *arg;
     int fd;
-    do
+    while(1)
     {
         printf(">>> ");
         fflush(stdout);
-        input = GetMessage(fileno(stdin));
-        for (size_t i = 0, len = input.size-1; i < len; i++)
+        
+        if(input.size != 0)
         {
-            input.buffer[i] = (input.buffer[i] >= 'A' && input.buffer[i] <= 'Z' ? input.buffer[i]+32 : input.buffer[i]);
+            ClearMessage(input);
         }
+
+        input = GetMessage(fileno(stdin));
+        input.size--;
+        input.buffer[input.size-1] = '\0';
         input.buffer = splitstr(input.buffer," ");
+
+        if(equalstr(input.buffer,"exit") == TRUE)
+        {
+            break;
+        }
+
         if(equalstr(input.buffer,"send") == TRUE)
         {
             mode_arg = splitstr(NULL," ");
             if(mode_arg)
             {
                 arg = splitstr(NULL," ");
-                if(equalstr(mode_arg,"-M") == TRUE)
+                if(equalstr(mode_arg,"-m") == TRUE)
                 {
                     if(arg)
                     {
                         //send the message
+                        AddToMessageQueue(StrToMessage(arg),&MessageQueue);
                     }
                     else
                     {
                         puts("Error: Message not specified.");
                     }
                 }
-                else if(equalstr(mode_arg,"-F") == FALSE)
+                else if(equalstr(mode_arg,"-f") == TRUE)
                 {
                     if(arg)
                     {
@@ -134,7 +72,7 @@ int main()
                             file = GetMessage(fd);
                             close(fd);
                             //send the file
-                            
+                            AddToMessageQueue(file,&MessageQueue);
                         }
                     }
                     else
@@ -152,6 +90,24 @@ int main()
                 puts("Error: Message type wasn't specified.");
             }
         }
-    } while (equalstr(input.buffer,"exit") != TRUE);
-    
+        else if(equalstr(input.buffer,"show") == TRUE)
+        {
+
+            ShowMessageQueue(&MessageQueue);
+            
+        }
+        else if(equalstr(input.buffer,"clear") == TRUE)
+        {
+            system("clear");
+        }
+        else
+        {
+            puts("Error: Invalid command.");
+        }
+    }
+
+    ClearMessageQueue(&MessageQueue);
+
+    return 0;
 }
+
