@@ -28,7 +28,7 @@ int main(int argc, char * argv[])
         exit(EXIT_FAILURE);
     }
 
-    struct Message Message = GetMessage(fd);
+    struct Message Message = GetMessage(fd,false);
 
     ShowMessageContent(&Message);
 

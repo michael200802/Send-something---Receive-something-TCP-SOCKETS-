@@ -9,6 +9,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <sys/socket.h>
+
 void ClearMessage(struct Message Message)
 {
     Message.size = 0;
@@ -59,44 +61,87 @@ void * Mymemcpy(void * dest, const void * src, size_t n)
     return dest;
 }
 
-struct Message GetMessage(int fd)
+struct Message GetMessage(int fd, bool is_socket)
 {
-
     char buffer[MAX_BUFFER_SIZE_FOR_INPUT+1];
     buffer[MAX_BUFFER_SIZE_FOR_INPUT] = '\0';
-    size_t buffer_size;
-    struct Message Message = {0,0};
-    bool isstdin = fileno(stdin) == fd;
+    ssize_t buffer_size;
+    struct Message Message = {0,NULL};
+    bool is_stdin = fileno(stdin) == fd;
 
-    buffer_size = read(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT);
+    if (is_socket)
+    {
+        buffer_size = recv(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT,0);
+    }
+    else
+    {
+        buffer_size = read(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT);
+    }
+    
 
     buffer[buffer_size] = '\0';
 
     Message.size = buffer_size+1;
     Message.buffer = (char*)calloc(Message.size,sizeof(char));
     
-    if(buffer_size == 0)
+    if(buffer_size <= 0)
     {
         return Message;
     }
 
     Mymemcpy(Message.buffer,buffer,Message.size);
 
-    while((isstdin ? buffer[buffer_size-1] != '\n' : true) && buffer_size == MAX_BUFFER_SIZE_FOR_INPUT)
+    if(is_socket)
     {
-        buffer_size = read(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT);
-
-        if(buffer_size == 0)
+        while(buffer_size == MAX_BUFFER_SIZE_FOR_INPUT)
         {
-            break;
+            buffer_size = recv(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT,0);
+
+            if(buffer_size == 0)
+            {
+                break;
+            }
+            else if(buffer_size == -1)
+            {
+                free(Message.buffer);
+                Message.buffer = NULL;
+                Message.size = 0;
+                return Message;
+            }
+
+            buffer[buffer_size] = '\0';
+
+            Message.buffer = (char*)realloc(Message.buffer,Message.size+buffer_size);
+            Mymemcpy(Message.buffer + Message.size -1, buffer, buffer_size+1);
+
+            Message.size += buffer_size;
         }
+    }
+    else//the same, but it supports stdin
+    {
+        while((is_stdin ? buffer[buffer_size-1] != '\n' : true) && buffer_size == MAX_BUFFER_SIZE_FOR_INPUT)
+        {
+            buffer_size = read(fd,buffer,MAX_BUFFER_SIZE_FOR_INPUT);
 
-        buffer[buffer_size] = '\0';
+            if(buffer_size == 0)
+            {
+                break;
+            }
+            else if(buffer_size == -1)
+            {
+                free(Message.buffer);
+                Message.buffer = NULL;
+                Message.size = 0;
+                return Message;
+            }
 
-        Message.buffer = (char*)realloc(Message.buffer,Message.size+buffer_size);
-        Mymemcpy(Message.buffer + Message.size -1, buffer, buffer_size+1);
+            buffer[buffer_size] = '\0';
 
-        Message.size += buffer_size;
+            Message.buffer = (char*)realloc(Message.buffer,Message.size+buffer_size);
+            Mymemcpy(Message.buffer + Message.size -1, buffer, buffer_size+1);
+
+            Message.size += buffer_size;
+        }
     }
 
     return Message;
@@ -157,13 +202,18 @@ void ClearMessageQueue(struct MessageQueue * MessageQueue)
     }
 }
 
+void ShowMessageQueueNode(struct MessageQueueNode * MessageQueueNode)
+{
+    printf("\nDate: %s",asctime(&MessageQueueNode->date));
+    ShowMessageContent(&MessageQueueNode->Message);
+}
+
 void ShowMessageQueue(struct MessageQueue * MessageQueue)
 {
     struct MessageQueueNode * PtrToNode = MessageQueue->MessageQueueFirstMessage;
     while(PtrToNode)
     {
-        printf("\nDate: %s",asctime(&PtrToNode->date));
-        ShowMessageContent(&PtrToNode->Message);
+        ShowMessageQueueNode(PtrToNode);
         PtrToNode = PtrToNode->next;
     }
     putchar(10);

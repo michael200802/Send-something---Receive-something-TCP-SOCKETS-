@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 
 struct Message
 {
@@ -14,14 +15,15 @@ void ShowMessageContent(struct Message * Message);
 
 #define MAX_BUFFER_SIZE_FOR_INPUT 3
 
-struct Message GetMessage(int fd);
+#define NO_MESSAGE 0
+
+struct Message GetMessage(int fd, bool is_socket);
 
 struct Message StrToMessage(const char * restrict str);
 
 ////////////////////////////////////////////////////////////////
 
 #include <time.h>
-#include <stdbool.h>
 
 struct MessageQueueNode
 {
@@ -40,5 +42,7 @@ void InitMessageQueue(struct MessageQueue * Message);
 bool AddToMessageQueue(struct Message Message, struct MessageQueue * MessageQueue);
 
 void ClearMessageQueue(struct MessageQueue * MessageQueue);
+
+void ShowMessageQueueNode(struct MessageQueueNode * MessageQueueNode);
 
 void ShowMessageQueue(struct MessageQueue * MessageQueue);

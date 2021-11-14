@@ -1,5 +1,8 @@
 compiler = gcc
 
+ReceiveSomething: ReceiveSomething.c Message.o Mystring.o
+	$(compiler) -pthread $^ -o $@
+
 SendSomething: SendSomething.c Message.o Mystring.o
 	$(compiler) $? -o $@
 

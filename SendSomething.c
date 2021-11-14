@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 
 #define IP_MAX_SIZE 16
+#define PORT 9000
 
 int main()
 {
@@ -28,7 +29,7 @@ int main()
     ssize_t send_return;
     struct sockaddr_in sin;
     sin.sin_family = AF_INET;
-    sin.sin_port = htons(9000);
+    sin.sin_port = htons(PORT);
     for(unsigned char i = 0; i < 8; i++)
     {
         sin.sin_zero[i] = 0;
@@ -53,7 +54,7 @@ int main()
             ClearMessage(input);
         }
 
-        input = GetMessage(fileno(stdin));
+        input = GetMessage(fileno(stdin),false);
         input.size--;
         input.buffer[input.size-1] = '\0';
         input.buffer = splitstr(input.buffer," ");
@@ -85,6 +86,7 @@ int main()
                             else if(send_return == -1)
                             {
                                 puts("Error: Message wasn't sent.");
+                                socket_ready = FALSE;
                             }
                             else
                             {
@@ -108,7 +110,7 @@ int main()
                             }
                             else
                             {
-                                msg = GetMessage(fd);
+                                msg = GetMessage(fd,false);
                                 close(fd);
                                 send_return = send(socket_fd,msg.buffer,msg.size,0);
                                 if(send_return == msg.size)
@@ -119,6 +121,7 @@ int main()
                                 else if(send_return == -1)
                                 {
                                     puts("Error: The file wasn't sent.");
+                                    socket_ready = FALSE;
                                 }
                                 else
                                 {
@@ -182,6 +185,7 @@ int main()
                 else
                 {
                     printf("Connection with %s established successfully.\n",inet_ntop(AF_INET,&sin.sin_addr,IP,INET_ADDRSTRLEN));
+                    socket_ready = TRUE;
                 }
             }
         }
