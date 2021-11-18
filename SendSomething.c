@@ -54,7 +54,7 @@ int main()
             ClearMessage(input);
         }
 
-        input = GetMessage(fileno(stdin),false);
+        input = GetMessageFromFile(fileno(stdin));
         input.size--;
         input.buffer[input.size-1] = '\0';
         input.buffer = splitstr(input.buffer," ");
@@ -110,7 +110,7 @@ int main()
                             }
                             else
                             {
-                                msg = GetMessage(fd,false);
+                                msg = GetMessageFromFile(fd);
                                 close(fd);
                                 send_return = send(socket_fd,msg.buffer,msg.size,0);
                                 if(send_return == msg.size)

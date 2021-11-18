@@ -19,6 +19,8 @@
 #include "Message.h"
 #include "Mystring.h"
 
+#include <stdlib.h>
+
 #define DATABASE "ReceiveSomething.txt"
 
 #define PORT 9000
@@ -41,22 +43,23 @@ void * handle_connection(void*args)
 
     while (1)
     {
-        Message = GetMessage(client_socket_fd,true);
-        puts("READ MSG");
-        if(Message.size == NO_MESSAGE)
+        Message = GetMessageFromSock(client_socket_fd);
+        
+        if(Message.size == 0)
         {
             if(Message.buffer == NULL)
             {
                 break;
             }
-            puts("Wait...");
             sleep(100);
             continue;
         }
+        //write(fd_history,Message.buffer,Message.size);
 
         pthread_mutex_lock(&stdout_stream_mutex);
         AddToMessageQueue(Message,&MessageQueue);
-        ShowMessageQueueNode(MessageQueue.MessageQueueFirstMessage);
+        ShowMessageQueue(&MessageQueue);
+        system("clear");
         pthread_mutex_unlock(&stdout_stream_mutex);
     }
 
@@ -73,6 +76,9 @@ void * handle_connection(void*args)
 
 int main()
 {
+    InitMessageQueue(&MessageQueue);
+
+    /*
     //Load the content of the file to the Queue
     {
         struct stat file_status;
@@ -86,8 +92,6 @@ int main()
         }
         
         stat(DATABASE,&file_status);
-
-        InitMessageQueue(&MessageQueue);
 
         if(file_status.st_size != 0)
         {
@@ -113,6 +117,7 @@ int main()
 
         close(fd_history);
     }
+    */
 
     fd_history = open(DATABASE,O_WRONLY|O_APPEND);
 

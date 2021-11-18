@@ -15,9 +15,9 @@ void ShowMessageContent(struct Message * Message);
 
 #define MAX_BUFFER_SIZE_FOR_INPUT 3
 
-#define NO_MESSAGE 0
+struct Message GetMessageFromSock(int fd);
 
-struct Message GetMessage(int fd, bool is_socket);
+struct Message GetMessageFromFile(int fd);
 
 struct Message StrToMessage(const char * restrict str);
 
